@@ -16,6 +16,11 @@ Including another URLconf
 from django.conf.urls import url
 from django.contrib import admin
 
+from pix.views import MyView
+
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
+    
+    # REST API:
+    url(r'^myview/$', MyView.as_view()),
 ]
