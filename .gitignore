@@ -185,3 +185,4 @@ tags
 # End of https://www.gitignore.io/api/django,vim,pycharm,python
 
 # Generated using ignr.py - github.com/Antrikshy/ignr.py
+.idea/

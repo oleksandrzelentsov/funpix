@@ -5,10 +5,11 @@ from django.db.models import ManyToManyField
 
 class Image(models.Model):
     title = models.TextField(max_length=32)
-    picture = models.ImageField(upload_to='images')
+    image = models.ImageField(upload_to='images')
+    likes = models.IntegerField(default=0)
 
     def __str__(self):
-        return '%s-%i' % (self.picture.name, self.id)
+        return '%i-%s' % (self.id, self.image.name)
 
 
 class PixUser(User):

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Home</title>
+    {% load static %}
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+    <script src="{% static "app.js" %}"></script>
+</head>
+<body>
+<nav id="navbar">
+    <input id="home" type="button" value="Home" />
+    <input id="waiting" type="button" value="Waiting room" />
+    <input id="login" type="button" value="Log in" />
+    <input id="register" type="button" value="Register" />
+    <input id="my" type="button" value="My images" />
+    <input id="logout" type="button" value="Log out" />
+</nav>
+<div id="active-region">
+
+</div>
+</body>
+</html>
