@@ -1,11 +1,12 @@
 from functools import partial
 
-from django.contrib.auth import authenticate, logout
-from django.contrib.auth.decorators import login_required
+from django.conf.global_settings import CSRF_COOKIE_NAME
+from django.contrib.auth import authenticate, logout, login
 from django.contrib.auth.models import User
 from django.http import JsonResponse, HttpResponse
 from django.utils.decorators import method_decorator
 from django.views import View
+from django.middleware import csrf
 
 from pix.models import Image
 
@@ -24,25 +25,44 @@ def report_error_in_json(f):
     return new_f
 
 
-@method_decorator(report_error_in_json, name='dispatch')
+def login_required(f):
+    """
+    Custom hardcoded version to prevent anonymous users to use resources that are only for authorized users.
+    """
+    def new_f(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return JsonResponse({'result': 'you have to be logged in to perform this action'}, status=401)
+        return f(request, *args, **kwargs)
+    return new_f
+
+
+# @method_decorator(report_error_in_json, name='dispatch')
 class LoginView(View):
+    def get(self, request):
+        token = csrf._get_new_csrf_token()
+        r = JsonResponse({'result': 'ok', 'csrf_token': token})
+        r.set_cookie(CSRF_COOKIE_NAME, token)
+        return r
+
     def post(self, request):
-        username = request.POST['username']
-        password = request.POST['password']
-        user = authenticate(username=username, password=password)
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user = authenticate(request, username=username, password=password)
         if user is not None:
+            login(request, user)
             return JsonResponse({'result': 'ok'})
         else:
             return JsonResponse({'result': 'incorrect username or password'})
 
-    @partial(login_required, login_url='/')
+    @method_decorator(login_required)
     def delete(self, request):
         logout(request)
+        return JsonResponse({'result': 'ok'})
 
 
 @method_decorator(report_error_in_json, name='dispatch')
 class UsersView(View):
-    @method_decorator(partial(login_required, login_url='/'))
+    @method_decorator(login_required)
     def get(self, request):
         result = [x.username for x in User.objects.all()]
         return JsonResponse({'result': 'ok', 'users': result})
@@ -57,7 +77,7 @@ class UsersView(View):
 
 @method_decorator(report_error_in_json, name='dispatch')
 class UserView(View):
-    @method_decorator(partial(login_required, login_url='/'))
+    @method_decorator(login_required)
     def get(self, request, username):
         u = User.objects.get(username=username)
         return JsonResponse({
@@ -67,7 +87,7 @@ class UserView(View):
             'liked': len(u.likes.all()),
         })
 
-    @method_decorator(partial(login_required, login_url='/'))
+    @method_decorator(login_required)
     def delete(self, request, username):
         if not (request.user.get_username() == username or request.user.is_superuser):
             return JsonResponse({'result': 'you have no permission to delete %s user' % username}, status=401)
@@ -80,17 +100,19 @@ class UserView(View):
 class ImagesView(View):
     def get(self, request):
         result = {'result': 'ok', 'images': []}
-        if request.GET.get('my', None) is not None:
+        if request.GET.get('my', None) is not None and request.user.is_authenticated:
             collection = Image.objects.filter(author=request.user)
         elif request.GET.get('popularity', None) is not None:
             collection = Image.objects.all()
             all_likes = 0
             for i in collection:
-                all_likes += i.likes
+                all_likes += len(i.likes.all())
             if request.GET['popularity'] == 'main':
-                collection = Image.objects.filter(likes__gt=all_likes / 10)
+                collection = Image.objects.filter(likes__gt=int(round(all_likes / 10)))
             elif request.GET['popularity'] == 'waiting':
-                collection = Image.objects.filter(likes__lt=all_likes / 10)
+                collection = Image.objects.filter(likes__lt=int(round(all_likes / 10)))
+            else:
+                return JsonResponse({'result': 'wrong value for "popularity parameter"'})
         else:
             collection = Image.objects.all()
 
@@ -105,7 +127,7 @@ class ImagesView(View):
             result['images'].append(pic)
         return JsonResponse(result)
 
-    @method_decorator(partial(login_required, login_url='/'))
+    @method_decorator(login_required)
     def post(self, request):
         title = request.POST['title']
         image = request.FILES['image']
@@ -115,14 +137,14 @@ class ImagesView(View):
 
 @method_decorator(report_error_in_json, name='dispatch')
 class ImageView(View):
-    @method_decorator(partial(login_required, login_url='/'))
+    @method_decorator(login_required)
     def get(self, request, pk):
         image = Image.objects.get(pk=pk)
         return HttpResponse(image.image, content_type='image/%s' % image.image.name.split('.')[-1])
 
-    @method_decorator(partial(login_required, login_url='/'))
+    @method_decorator(login_required)
     def patch(self, request, pk):
-        if request.GET.get('plus') is not None:
+        if request.GET.get('like') is not None:
             image = Image.objects.get(pk=pk)
             user = request.user
             if user in image.likes.all():
@@ -134,8 +156,10 @@ class ImageView(View):
         else:
             return JsonResponse({'result': 'unspecific patch request'})
 
-    @method_decorator(partial(login_required, login_url='/'))
+    @method_decorator(login_required)
     def delete(self, request, pk):
         image = Image.objects.get(pk=pk)
+        if image.author != request.user and not request.user.is_superuser:
+            return JsonResponse({'result': 'you have no permission to delete this resource'})
         image.delete()
         return JsonResponse({'result': 'ok'})
