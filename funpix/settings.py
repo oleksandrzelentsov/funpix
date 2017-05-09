@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'pix',
 ]
 
 MIDDLEWARE = [
@@ -113,4 +114,4 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-MEDIA_ROOT = '/var/www/funpix/media'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

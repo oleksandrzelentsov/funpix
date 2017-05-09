@@ -16,14 +16,14 @@ Including another URLconf
 from django.conf.urls import url
 from django.contrib import admin
 
-from pix.views import UsersView, UserView, ImagesView, ImageView
+from pix.views import UsersView, PixUserView, ImagesView, ImageView
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
     
     # REST API:
-    url(r'^users$', UsersView.as_view()),
-    url(r'^users/(?P<username>\w[\w\d]{3,})$', UserView.as_view()),
-    url(r'^images$', ImagesView.as_view()),
-    url(r'^images/(?P<id>\d+)$', ImageView.as_view()),
+    url(r'^users/?$', UsersView.as_view()),
+    url(r'^users/(?P<username>\w[\w\d]{3,})/?$', PixUserView.as_view()),
+    url(r'^images/?$', ImagesView.as_view()),
+    url(r'^images/(?P<id>\d+)/?$', ImageView.as_view()),
 ]
