@@ -12,11 +12,13 @@ def report_error_in_json(f):
     """
     Decorator used to prevent errors to soak down to user as 500 server error.
     """
+
     def new_f(*args, **kwargs):
         try:
             return f(*args, **kwargs)
         except Exception as e:
             return JsonResponse({'result': str(e)}, status=500)
+
     return new_f
 
 
@@ -42,6 +44,30 @@ def get_raw_image(request, pk):
     return HttpResponse(image.image, content_type='image/%s' % image.image.name.split('.')[-1])
 
 
+@login_required
+# @report_error_in_json
+def plus_image(request, pk):
+    image = Image.objects.get(pk=pk)
+    user = request.user
+    likes = image.likes
+    if user in image.likes.all():
+        image.likes.remove(user)
+    else:
+        image.likes.add(user)
+    result = {'result': 'ok', 'likes': len(image.likes.all())}
+    return JsonResponse(result)
+
+
+@report_error_in_json
+def get_the_most_popular(request):
+    pass  # TODO implement
+
+
+@report_error_in_json
+def get_the_least_popular(request):
+    pass  # TODO implement
+
+
 @method_decorator(report_error_in_json, name='dispatch')
 class UsersView(View):
     @method_decorator(login_required)
@@ -56,11 +82,6 @@ class UsersView(View):
         u = User.objects.create_user(username, email, password, is_active=False)
         return JsonResponse({'result': 'ok', 'user': u.get_username()}, status=201)
 
-    # @user_passes_test(lambda u: u.is_superuser)
-    # def delete(self, request):
-    #     User.objects.filter(is_superuser=False).delete()
-    #     return JsonResponse({'result': 'ok'})
-
 
 @method_decorator(report_error_in_json, name='dispatch')
 class UserView(View):
@@ -69,7 +90,7 @@ class UserView(View):
         u = User.objects.get(username=username)
         return JsonResponse({
             'username': u.get_username(),
-            'likes': sum([x.likes for x in u.images.all()]),
+            'likes': sum(len([x.likes for x in u.images.all()])),
             'liked': len(u.likes.all()),
         })
 
@@ -90,8 +111,10 @@ class ImagesView(View):
         for i in Image.objects.all():
             pic = {
                 'title': i.title,
+                'pk': i.id,
                 'url': '/raw/images/%s' % i.id,
-                'likes': i.likes
+                'likes': len(i.likes.all()),
+                'user': i.author.get_username(),
             }
             result['images'].append(pic)
         return JsonResponse(result)
@@ -107,9 +130,9 @@ class ImagesView(View):
 @method_decorator(report_error_in_json, name='dispatch')
 class ImageView(View):
     @method_decorator(login_required)
-    def get(self, request, id):
+    def get(self, request, pk):
         pass
 
     @method_decorator(login_required)
-    def delete(self, request, id):
+    def delete(self, request, pk):
         pass

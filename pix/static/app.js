@@ -37,13 +37,26 @@ function get_images() {
         url: '/images/',
         contentType: "application/json; charset=utf-8",
         dataType: "json",
-        success: function(result){
-            // TODO display images
+        success: function(result) {
             var act_reg = '';
             for(i = 0; i < result.images.length; ++i) {
                 act_reg += create_image_post(result.images[i]);
             }
             $('#active-region').html(act_reg);
+            for(i = 0; i < result.images.length; ++i) {
+                $('#like' + result.images[i].pk).click(function(e) {
+                    $.ajax({
+                        type: 'GET',
+                        url: '/images/' + e.target.id.replace('like', '') + '/plus/',
+                        contentType: "application/json; charset=utf-8",
+                        dataType: "json",
+                        success: function(result) {
+                            $(e.target).val('+ (' + result.likes + ')');
+                            // get_images();
+                        },
+                    });
+                });
+            }
             console.log(result);
         }
     });
@@ -88,7 +101,10 @@ function create_image_post(img) {
     var result = '<div class="image_post"><p>';
     result += img.title;
     result += '</p>';
-    result += '<img src="' + img.url + '" />';
+    result += '<img src="' + img.url + '" /><br>';
+    var temp = img.url.split('/');
+    result += '<input type="button" id="like' + temp[temp.length - 1] + '" type="button" value="+ (' + img.likes + ')"/><br>';
+    result += 'by ' + img.user;
     result += '</div>';
     return result;
 }
