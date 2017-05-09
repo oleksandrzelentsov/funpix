@@ -7,13 +7,8 @@ class Image(models.Model):
     title = models.TextField(max_length=32)
     image = models.ImageField(upload_to='images')
     likes = models.IntegerField(default=0)
+    author = models.ForeignKey(User, default=1)
 
     def __str__(self):
         return '%i-%s' % (self.id, self.image.name)
 
-
-class PixUser(User):
-    # images published by user
-    images = ManyToManyField(Image, blank=True, related_name='images_published')
-    # images the user liked
-    likes = ManyToManyField(Image, blank=True, related_name='liked_images')

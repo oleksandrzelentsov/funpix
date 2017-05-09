@@ -1,10 +1,11 @@
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render
 from django.utils.decorators import method_decorator
 from django.views import View
 
-from pix.models import PixUser, Image
+from pix.models import Image
 
 
 def report_error_in_json(f):
@@ -33,7 +34,7 @@ def is_user_authenticated(request):
     if request.user.is_authenticated:
         return JsonResponse({'result': 'ok'})
     else:
-        return JsonResponse({'result': 'user is not authenticated'}, status=401)
+        return JsonResponse({'result': 'user is not authenticated'})
 
 
 def get_raw_image(request, pk):
@@ -42,17 +43,17 @@ def get_raw_image(request, pk):
 
 
 @method_decorator(report_error_in_json, name='dispatch')
-class PixUsersView(View):
+class UsersView(View):
     @method_decorator(login_required)
     def get(self, request):
-        result = [x.username for x in PixUser.objects.all()]
+        result = [x.username for x in User.objects.all()]
         return JsonResponse({'result': 'ok', 'users': result})
 
     def post(self, request):
         username = request.POST['username']
         email = request.POST['email']
         password = request.POST['password']
-        u = PixUser.objects.create_user(username, email, password, is_active=False)
+        u = User.objects.create_user(username, email, password, is_active=False)
         return JsonResponse({'result': 'ok', 'user': u.get_username()}, status=201)
 
     # @user_passes_test(lambda u: u.is_superuser)
@@ -62,10 +63,10 @@ class PixUsersView(View):
 
 
 @method_decorator(report_error_in_json, name='dispatch')
-class PixUserView(View):
+class UserView(View):
     @method_decorator(login_required)
     def get(self, request, username):
-        u = PixUser.objects.get(username=username)
+        u = User.objects.get(username=username)
         return JsonResponse({
             'username': u.get_username(),
             'likes': sum([x.likes for x in u.images.all()]),
@@ -76,7 +77,7 @@ class PixUserView(View):
     def delete(self, request, username):
         if not (request.user.get_username() == username or request.user.is_superuser):
             return JsonResponse({'result': 'you have no permission to delete %s user' % username}, status=401)
-        u = PixUser.objects.get(username=username)
+        u = User.objects.get(username=username)
         u.delete()
         return JsonResponse({'result': 'ok'})
 
