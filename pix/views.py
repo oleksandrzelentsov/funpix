@@ -45,11 +45,10 @@ def get_raw_image(request, pk):
 
 
 @login_required
-# @report_error_in_json
+@report_error_in_json
 def plus_image(request, pk):
     image = Image.objects.get(pk=pk)
     user = request.user
-    likes = image.likes
     if user in image.likes.all():
         image.likes.remove(user)
     else:
@@ -68,47 +67,51 @@ def get_the_least_popular(request):
     pass  # TODO implement
 
 
-@method_decorator(report_error_in_json, name='dispatch')
-class UsersView(View):
-    @method_decorator(login_required)
-    def get(self, request):
-        result = [x.username for x in User.objects.all()]
-        return JsonResponse({'result': 'ok', 'users': result})
-
-    def post(self, request):
-        username = request.POST['username']
-        email = request.POST['email']
-        password = request.POST['password']
-        u = User.objects.create_user(username, email, password, is_active=False)
-        return JsonResponse({'result': 'ok', 'user': u.get_username()}, status=201)
-
-
-@method_decorator(report_error_in_json, name='dispatch')
-class UserView(View):
-    @method_decorator(login_required)
-    def get(self, request, username):
-        u = User.objects.get(username=username)
-        return JsonResponse({
-            'username': u.get_username(),
-            'likes': sum(len([x.likes for x in u.images.all()])),
-            'liked': len(u.likes.all()),
-        })
-
-    @method_decorator(login_required)
-    def delete(self, request, username):
-        if not (request.user.get_username() == username or request.user.is_superuser):
-            return JsonResponse({'result': 'you have no permission to delete %s user' % username}, status=401)
-        u = User.objects.get(username=username)
-        u.delete()
-        return JsonResponse({'result': 'ok'})
+# @method_decorator(report_error_in_json, name='dispatch')
+# class UsersView(View):
+#     @method_decorator(login_required)
+#     def get(self, request):
+#         result = [x.username for x in User.objects.all()]
+#         return JsonResponse({'result': 'ok', 'users': result})
+#
+#     def post(self, request):
+#         username = request.POST['username']
+#         email = request.POST['email']
+#         password = request.POST['password']
+#         u = User.objects.create_user(username, email, password, is_active=False)
+#         return JsonResponse({'result': 'ok', 'user': u.get_username()}, status=201)
+#
+#
+# @method_decorator(report_error_in_json, name='dispatch')
+# class UserView(View):
+#     @method_decorator(login_required)
+#     def get(self, request, username):
+#         u = User.objects.get(username=username)
+#         return JsonResponse({
+#             'username': u.get_username(),
+#             'likes': sum(len([x.likes for x in u.images.all()])),
+#             'liked': len(u.likes.all()),
+#         })
+#
+#     @method_decorator(login_required)
+#     def delete(self, request, username):
+#         if not (request.user.get_username() == username or request.user.is_superuser):
+#             return JsonResponse({'result': 'you have no permission to delete %s user' % username}, status=401)
+#         u = User.objects.get(username=username)
+#         u.delete()
+#         return JsonResponse({'result': 'ok'})
 
 
 @method_decorator(report_error_in_json, name='dispatch')
 class ImagesView(View):
-    # @method_decorator(login_required)
     def get(self, request):
         result = {'result': 'ok', 'images': []}
-        for i in Image.objects.all():
+        if request.GET.get('my', None) is not None:
+            collection = Image.objects.filter(author=request.user)
+        else:
+            collection = Image.objects.all()
+
+        for i in collection:
             pic = {
                 'title': i.title,
                 'pk': i.id,

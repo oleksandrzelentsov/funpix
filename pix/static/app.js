@@ -31,10 +31,10 @@ function get_users() {
     });
 }
 
-function get_images() {
+function get_images(my=false) {
     $.ajax({
         type: 'GET',
-        url: '/images/',
+        url: (!my) ? '/images/' : '/images?my',
         contentType: "application/json; charset=utf-8",
         dataType: "json",
         success: function(result) {
@@ -71,11 +71,13 @@ function update_navbar() {
         $('nav #register').hide();
         $('nav #my').show();
         $('nav #logout').show();
+        $('nav #add').show();
     }, function() {
         $('nav #login').show();
         $('nav #register').show();
         $('nav #my').hide();
         $('nav #logout').hide();
+        $('nav #add').hide();
     });
 }
 
@@ -128,11 +130,16 @@ function register() {
 }
 
 function my() {
-    // TODO implement my images
+    get_images(true);
+    update_navbar();
 }
 
 function logout() {
     // TODO implement logout
+}
+
+function add_image() {
+    // TODO implement add image
 }
 
 $(document).ready(function() {
@@ -142,5 +149,6 @@ $(document).ready(function() {
     $('nav #register').click(register);
     $('nav #my').click(my);
     $('nav #logout').click(logout);
+    $('nav #add').click(add_image);
     home();
 });

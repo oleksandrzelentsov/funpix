@@ -16,22 +16,24 @@ Including another URLconf
 from django.conf.urls import url
 from django.contrib import admin
 
-from pix.views import UsersView, UserView, ImagesView, ImageView, register_test, index, is_user_authenticated, \
+from pix.views import ImagesView, ImageView, index, is_user_authenticated, \
     get_raw_image, plus_image
 
 urlpatterns = [
     url(r'^$', index),
     url(r'^admin/', admin.site.urls),
 
-    # tests
-    url(r'^register_test/?$', register_test),
+    # # tests
+    # url(r'^register_test/?$', register_test),
     
     # REST API
     url(r'^auth/?$', is_user_authenticated),
-    url(r'^users/?$', UsersView.as_view()),
-    url(r'^users/(?P<username>\w[\w\d]{3,})/?$', UserView.as_view()),
+    # url(r'^users/?$', UsersView.as_view()),
+    # url(r'^users/(?P<username>\w[\w\d]{3,})/?$', UserView.as_view()),
+
     url(r'^images/?$', ImagesView.as_view()),
     url(r'^images/(?P<pk>\d+)/?$', ImageView.as_view()),
     url(r'^images/(?P<pk>\d+)/plus/?$', plus_image),
+
     url(r'^raw/images/(?P<pk>\d+)/?$', get_raw_image),
 ]
