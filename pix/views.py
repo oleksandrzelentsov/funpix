@@ -33,12 +33,12 @@ def is_user_authenticated(request):
     if request.user.is_authenticated:
         return JsonResponse({'result': 'ok'})
     else:
-        return JsonResponse({'result': 'user is not authenticated'})
+        return JsonResponse({'result': 'user is not authenticated'}, status=401)
 
 
-def get_raw_image(request, id):
-    image = Image.objects.get(pk=id)
-    return HttpResponse(image.image, content_type='image/%s' % image.image.name)
+def get_raw_image(request, pk):
+    image = Image.objects.get(pk=pk)
+    return HttpResponse(image.image, content_type='image/%s' % image.image.name.split('.')[-1])
 
 
 @method_decorator(report_error_in_json, name='dispatch')
@@ -89,7 +89,7 @@ class ImagesView(View):
         for i in Image.objects.all():
             pic = {
                 'title': i.title,
-                'link': '/raw/images/%s' % i.id,
+                'url': '/raw/images/%s' % i.id,
                 'likes': i.likes
             }
             result['images'].append(pic)

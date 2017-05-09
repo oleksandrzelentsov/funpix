@@ -32,5 +32,5 @@ urlpatterns = [
     url(r'^users/(?P<username>\w[\w\d]{3,})/?$', PixUserView.as_view()),
     url(r'^images/?$', ImagesView.as_view()),
     url(r'^images/(?P<id>\d+)/?$', ImageView.as_view()),
-    url(r'^raw/images/(?P<id>\d+)/?$', get_raw_image),
+    url(r'^raw/images/(?P<pk>\d+)/?$', get_raw_image),
 ]
