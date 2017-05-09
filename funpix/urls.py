@@ -16,11 +16,12 @@ Including another URLconf
 from django.conf.urls import url
 from django.contrib import admin
 
-from pix.views import MyView
+from pix.views import UsersView, UserView
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
     
     # REST API:
-    url(r'^myview/$', MyView.as_view()),
+    url(r'^users$', UsersView.as_view()),
+    url(r'^users/(?P<username>\w[\w\d]{3,})$', UserView.as_view()),
 ]
