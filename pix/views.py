@@ -1,12 +1,8 @@
-from functools import partial
-
-from django.conf.global_settings import CSRF_COOKIE_NAME
 from django.contrib.auth import authenticate, logout, login
 from django.contrib.auth.models import User
 from django.http import JsonResponse, HttpResponse
 from django.utils.decorators import method_decorator
 from django.views import View
-from django.middleware import csrf
 
 from pix.models import Image
 
@@ -36,13 +32,10 @@ def login_required(f):
     return new_f
 
 
-# @method_decorator(report_error_in_json, name='dispatch')
+@method_decorator(report_error_in_json, name='dispatch')
 class LoginView(View):
     def get(self, request):
-        token = csrf._get_new_csrf_token()
-        r = JsonResponse({'result': 'ok', 'csrf_token': token})
-        r.set_cookie(CSRF_COOKIE_NAME, token)
-        return r
+        return JsonResponse({'result': 'ok'})
 
     def post(self, request):
         username = request.POST.get('username')
@@ -107,10 +100,11 @@ class ImagesView(View):
             all_likes = 0
             for i in collection:
                 all_likes += len(i.likes.all())
+            print(all_likes / 10)
             if request.GET['popularity'] == 'main':
-                collection = Image.objects.filter(likes__gt=int(round(all_likes / 10)))
+                collection = Image.objects.filter(likes__gt=(all_likes / 10.0)).distinct()
             elif request.GET['popularity'] == 'waiting':
-                collection = Image.objects.filter(likes__lt=int(round(all_likes / 10)))
+                collection = Image.objects.exclude(likes__gte=(all_likes / 10.0)).distinct()
             else:
                 return JsonResponse({'result': 'wrong value for "popularity parameter"'})
         else:
