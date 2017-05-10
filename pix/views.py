@@ -34,9 +34,6 @@ def login_required(f):
 
 @method_decorator(report_error_in_json, name='dispatch')
 class LoginView(View):
-    def get(self, request):
-        return JsonResponse({'result': 'ok'})
-
     def post(self, request):
         username = request.POST.get('username')
         password = request.POST.get('password')
@@ -76,8 +73,7 @@ class UserView(View):
         return JsonResponse({
             'username': u.get_username(),
             'email': u.email,
-            'likes': sum(len([x.likes for x in u.images.all()])),
-            'liked': len(u.likes.all()),
+            'likes': sum([len(x.likes.all()) for x in Image.objects.filter(author=u)]),
         })
 
     @method_decorator(login_required)
